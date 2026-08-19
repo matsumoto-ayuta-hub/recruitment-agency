@@ -1,0 +1,52 @@
+name: CA週次レポート自動生成
+
+on:
+  schedule:
+    # 毎週金曜 夕方6時 JST (9:00 UTC)
+    - cron: "0 9 * * 5"
+  workflow_dispatch:
+
+jobs:
+  generate-ca-reports:
+    name: CA個別週次レポート生成
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - run: npm ci
+
+      - name: CAレポート生成
+        run: |
+          npx ts-node -e "
+          const { caMediaService, defaultSurveyTemplate } = require('./apps/ca-media/src/index.ts');
+          const { dashboard } = require('./apps/dashboard/src/index.ts');
+          const snap = dashboard.generateSnapshot();
+          dashboard.printDashboard(snap);
+          console.log('週次ダッシュボード生成完了');
+          "
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+
+      - name: ダッシュボードスナップショット保存
+        run: |
+          git config --local user.email "claude-code@careerjapan.co"
+          git config --local user.name "Claude Code (Weekly Report)"
+          WEEK=$(date +%Y-W%V)
+          mkdir -p reports/weekly
+          node -e "
+          const { dashboard } = require('./apps/dashboard/src/index.ts');
+          const fs = require('fs');
+          const snap = dashboard.generateSnapshot();
+          fs.writeFileSync('reports/weekly/$WEEK.json', JSON.stringify(snap, null, 2));
+          "
+          git add reports/weekly/ || true
+          git diff --staged --quiet || git commit -m "data: 週次ダッシュボードスナップショット — $WEEK"
+          git push origin main || true

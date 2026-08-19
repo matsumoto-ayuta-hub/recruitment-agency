@@ -1,0 +1,23 @@
+{
+  "name": "recruitment-agency",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "npm run dev --workspaces --if-present",
+    "build": "npm run build --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present",
+    "niche:launch": "npx ts-node automation/daily-niche-launch.ts",
+    "llmo:update": "npx ts-node automation/llmo-updater.ts",
+    "nurturing:run": "npx ts-node automation/nurturing-pipeline.ts",
+    "score:leads": "npx ts-node automation/lead-scoring-job.ts"
+  },
+  "devDependencies": {
+    "typescript": "^5.3.0",
+    "ts-node": "^10.9.0",
+    "@types/node": "^20.0.0"
+  }
+}

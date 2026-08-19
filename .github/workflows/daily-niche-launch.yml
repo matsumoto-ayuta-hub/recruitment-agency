@@ -1,0 +1,101 @@
+name: 毎日ニッチサービスローンチ
+
+on:
+  schedule:
+    # 毎朝9時 (JST = UTC+9, so 0:00 UTC)
+    - cron: "0 0 * * *"
+  workflow_dispatch:
+    inputs:
+      date:
+        description: "対象日付 (YYYY-MM-DD, 省略時は今日)"
+        required: false
+
+jobs:
+  generate-niche-service:
+    name: ニッチサービス生成 & 承認依頼
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
+
+    steps:
+      - name: リポジトリチェックアウト
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Node.js セットアップ
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: 依存関係インストール
+        run: npm ci
+
+      - name: ニッチサービス生成
+        run: npm run niche:launch
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          NODE_ENV: production
+
+      - name: 生成ファイルをコミット
+        run: |
+          git config --local user.email "claude-code@careerjapan.co"
+          git config --local user.name "Claude Code (Automation)"
+          TODAY=$(date +%Y-%m-%d)
+          git add generated/$TODAY/ approval-queue.json || true
+          git diff --staged --quiet || git commit -m "feat: 毎日ニッチサービス生成 — $TODAY
+
+          ClaudeCodeによる自動生成。松本氏の承認後に公開されます。"
+
+      - name: プッシュ
+        run: git push origin main
+
+      - name: GitHub Issue作成（承認依頼）
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const today = new Date().toISOString().slice(0, 10);
+            const issuePath = `generated/${today}/github-issue.md`;
+
+            if (!fs.existsSync(issuePath)) {
+              console.log('Issue内容ファイルが見つかりません');
+              return;
+            }
+
+            const issueBody = fs.readFileSync(issuePath, 'utf-8');
+            const titleMatch = issueBody.match(/^# (.+)/m);
+            const title = titleMatch ? titleMatch[1] : `ニッチサービス承認依頼 — ${today}`;
+
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title,
+              body: issueBody,
+              labels: ['承認待ち', 'niche-service', 'claude-generated'],
+              assignees: ['matsumoto-ayuta-hub'],
+            });
+
+            console.log(`承認依頼Issueを作成しました`);
+
+  notify-on-failure:
+    name: 失敗通知
+    needs: generate-niche-service
+    if: failure()
+    runs-on: ubuntu-latest
+    steps:
+      - name: 失敗Issue作成
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `⚠️ ニッチサービス自動生成失敗 — ${new Date().toISOString().slice(0, 10)}`,
+              body: `毎日ニッチサービスの自動生成に失敗しました。\n\nWorkflow Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}`,
+              labels: ['bug', 'automation-failure'],
+              assignees: ['matsumoto-ayuta-hub'],
+            });
