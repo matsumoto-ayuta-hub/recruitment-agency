@@ -1,0 +1,492 @@
+<title>コレカラ転職 実装コントロールパネル</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Shippori+Mincho+B1:wght@600;700&family=Zen+Kaku+Gothic+New:wght@400;500;700&family=JetBrains+Mono:wght@400;600&display=swap">
+
+<style>
+:root{
+  --paper:#F5F7FA;
+  --card:#FFFFFF;
+  --sunk:#EDF1F6;
+  --ink:#161C27;
+  --ink-2:#404B5E;
+  --ink-3:#6E7A8D;
+  --line:#D8DFE9;
+  --line-soft:#E7ECF3;
+  --indigo:#2D4E8A;
+  --indigo-soft:#E6ECF7;
+  --shu:#C4362B;
+  --shu-soft:#FBE9E7;
+  --green:#1F6B4E;
+  --green-soft:#E2F0EA;
+  --amber:#9A6510;
+  --amber-soft:#FBEFD9;
+  --shadow:0 1px 2px rgba(22,28,39,.06), 0 8px 24px -12px rgba(22,28,39,.18);
+  --mono:"JetBrains Mono","SFMono-Regular",Consolas,monospace;
+  --sans:"Zen Kaku Gothic New","Hiragino Kaku Gothic ProN","Yu Gothic",Meiryo,sans-serif;
+  --serif:"Shippori Mincho B1","Hiragino Mincho ProN","Yu Mincho",serif;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --paper:#0E1219;
+    --card:#161C27;
+    --sunk:#1D2532;
+    --ink:#E8EDF5;
+    --ink-2:#B4BFD0;
+    --ink-3:#8391A6;
+    --line:#2C3646;
+    --line-soft:#232C3A;
+    --indigo:#8FB0E8;
+    --indigo-soft:#1B2740;
+    --shu:#F08A7E;
+    --shu-soft:#33201D;
+    --green:#6FC7A0;
+    --green-soft:#15291F;
+    --amber:#E0AC5B;
+    --amber-soft:#2C2213;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px -12px rgba(0,0,0,.6);
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#0E1219;
+  --card:#161C27;
+  --sunk:#1D2532;
+  --ink:#E8EDF5;
+  --ink-2:#B4BFD0;
+  --ink-3:#8391A6;
+  --line:#2C3646;
+  --line-soft:#232C3A;
+  --indigo:#8FB0E8;
+  --indigo-soft:#1B2740;
+  --shu:#F08A7E;
+  --shu-soft:#33201D;
+  --green:#6FC7A0;
+  --green-soft:#15291F;
+  --amber:#E0AC5B;
+  --amber-soft:#2C2213;
+  --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px -12px rgba(0,0,0,.6);
+}
+
+*{box-sizing:border-box}
+body{
+  margin:0;
+  background:var(--paper);
+  color:var(--ink);
+  font-family:var(--sans);
+  font-size:15px;
+  line-height:1.75;
+  -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:880px;margin:0 auto;padding:40px 22px 100px}
+
+/* ---------- masthead ---------- */
+.mast{border-bottom:2px solid var(--ink);padding-bottom:18px;margin-bottom:14px}
+.mast .eyebrow{
+  font-family:var(--mono);font-size:11px;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--ink-3);margin:0 0 10px
+}
+.mast h1{
+  font-family:var(--serif);font-weight:700;font-size:clamp(27px,4.4vw,38px);
+  line-height:1.28;margin:0;text-wrap:balance;letter-spacing:.01em
+}
+.mast .sub{color:var(--ink-2);margin:10px 0 0;font-size:14.5px;max-width:62ch}
+.stamp{
+  float:right;margin:2px 0 8px 16px;border:1.5px solid var(--shu);color:var(--shu);
+  border-radius:3px;padding:7px 11px;text-align:center;font-family:var(--mono);
+  font-size:10px;letter-spacing:.1em;line-height:1.5;background:var(--shu-soft)
+}
+.stamp b{display:block;font-size:13px;letter-spacing:.05em}
+
+/* ---------- status board ---------- */
+.board{
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(178px,1fr));gap:1px;
+  background:var(--line);border:1px solid var(--line);border-radius:9px;
+  overflow:hidden;margin:26px 0 40px;box-shadow:var(--shadow)
+}
+.cell{background:var(--card);padding:14px 15px 15px}
+.cell .k{font-size:12.5px;color:var(--ink-3);margin-bottom:9px;line-height:1.45}
+.pill{
+  display:inline-flex;align-items:center;gap:6px;font-family:var(--mono);font-size:11px;
+  font-weight:600;letter-spacing:.04em;padding:3px 9px;border-radius:20px;border:1px solid
+}
+.pill::before{content:"";width:5px;height:5px;border-radius:50%;background:currentColor}
+.p-dead{color:var(--shu);background:var(--shu-soft);border-color:var(--shu)}
+.p-wait{color:var(--amber);background:var(--amber-soft);border-color:var(--amber)}
+.p-live{color:var(--green);background:var(--green-soft);border-color:var(--green)}
+
+/* ---------- generic blocks ---------- */
+h2{
+  font-family:var(--serif);font-weight:700;font-size:22px;line-height:1.4;
+  margin:0 0 6px;text-wrap:balance
+}
+.sec{margin:0 0 46px}
+.sec>.lead{color:var(--ink-2);margin:0 0 20px;max-width:64ch}
+.rule{display:flex;align-items:center;gap:11px;margin:0 0 18px}
+.rule .n{
+  font-family:var(--mono);font-size:11px;font-weight:600;color:var(--indigo);
+  background:var(--indigo-soft);border:1px solid var(--indigo);
+  padding:2px 8px;border-radius:3px;flex:none;letter-spacing:.08em
+}
+.rule .bar{height:1px;background:var(--line);flex:1}
+
+.card{
+  background:var(--card);border:1px solid var(--line);border-radius:9px;
+  padding:20px 22px;box-shadow:var(--shadow)
+}
+
+/* ---------- alert ---------- */
+.alert{
+  background:var(--card);border:1px solid var(--shu);border-left:5px solid var(--shu);
+  border-radius:9px;padding:20px 22px;box-shadow:var(--shadow)
+}
+.alert h3{
+  font-family:var(--serif);font-size:18.5px;font-weight:700;margin:0 0 12px;color:var(--shu);
+  line-height:1.45
+}
+.proof{
+  background:var(--sunk);border:1px solid var(--line-soft);border-radius:6px;
+  padding:13px 15px;margin:15px 0;font-family:var(--mono);font-size:12.5px;
+  line-height:1.85;overflow-x:auto;white-space:pre;color:var(--ink-2)
+}
+.proof b{color:var(--shu)}
+
+/* ---------- tables ---------- */
+.tw{overflow-x:auto;border:1px solid var(--line);border-radius:9px;background:var(--card);box-shadow:var(--shadow)}
+table{border-collapse:collapse;width:100%;font-size:14px;min-width:520px}
+th{
+  text-align:left;font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--ink-3);font-weight:600;
+  padding:11px 15px;background:var(--sunk);border-bottom:1px solid var(--line);white-space:nowrap
+}
+td{padding:12px 15px;border-bottom:1px solid var(--line-soft);vertical-align:top;line-height:1.65}
+tr:last-child td{border-bottom:none}
+td.num{font-variant-numeric:tabular-nums;white-space:nowrap}
+.rec{background:var(--indigo-soft)}
+.rec td:first-child{box-shadow:inset 3px 0 0 var(--indigo)}
+
+/* ---------- steps ---------- */
+.steps{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:15px}
+.step{
+  background:var(--card);border:1px solid var(--line);border-radius:9px;
+  display:grid;grid-template-columns:46px 1fr;overflow:hidden;box-shadow:var(--shadow)
+}
+.step>.idx{
+  background:var(--sunk);border-right:1px solid var(--line);
+  display:flex;align-items:flex-start;justify-content:center;padding-top:19px;
+  font-family:var(--mono);font-size:15px;font-weight:600;color:var(--indigo);
+  font-variant-numeric:tabular-nums
+}
+.step>.bd{padding:17px 20px 19px;min-width:0}
+.step h3{font-size:16px;font-weight:700;margin:0 0 4px;line-height:1.5;font-family:var(--sans)}
+.step p{margin:0;color:var(--ink-2);font-size:14px}
+.step p+p{margin-top:9px}
+.do{
+  display:flex;flex-wrap:wrap;align-items:baseline;gap:8px;margin:12px 0 0;
+  padding:10px 13px;background:var(--sunk);border-radius:6px;border:1px solid var(--line-soft)
+}
+.do .lab{font-family:var(--mono);font-size:10px;letter-spacing:.1em;color:var(--ink-3);flex:none}
+code{
+  font-family:var(--mono);font-size:13px;background:var(--indigo-soft);color:var(--indigo);
+  padding:2px 7px;border-radius:4px;border:1px solid var(--line);font-weight:600;
+  overflow-wrap:anywhere
+}
+.check{
+  margin:12px 0 0;padding:10px 13px;border-radius:6px;font-size:13.5px;
+  background:var(--green-soft);border:1px solid var(--green);color:var(--ink-2)
+}
+.check b{color:var(--green)}
+.warn{
+  margin:12px 0 0;padding:10px 13px;border-radius:6px;font-size:13.5px;
+  background:var(--amber-soft);border:1px solid var(--amber);color:var(--ink-2)
+}
+.warn b{color:var(--amber)}
+.safe{
+  display:inline-block;font-family:var(--mono);font-size:10px;letter-spacing:.06em;
+  color:var(--green);background:var(--green-soft);border:1px solid var(--green);
+  padding:2px 7px;border-radius:3px;margin-left:8px;vertical-align:2px;font-weight:600
+}
+
+/* ---------- lists ---------- */
+ul.plain{margin:12px 0 0;padding-left:19px;color:var(--ink-2);font-size:14px}
+ul.plain li{margin-bottom:7px}
+ul.plain li:last-child{margin-bottom:0}
+ul.plain li::marker{color:var(--indigo)}
+
+/* ---------- action split ---------- */
+.split{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media(max-width:640px){.split{grid-template-columns:1fr}}
+.who{
+  font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;
+  padding:4px 9px;border-radius:3px;display:inline-block;margin-bottom:14px;font-weight:600
+}
+.who-you{background:var(--shu-soft);color:var(--shu);border:1px solid var(--shu)}
+.who-me{background:var(--indigo-soft);color:var(--indigo);border:1px solid var(--indigo)}
+ol.acts{margin:0;padding-left:19px;font-size:14px;color:var(--ink-2)}
+ol.acts li{margin-bottom:11px;line-height:1.7}
+ol.acts li:last-child{margin-bottom:0}
+ol.acts b{color:var(--ink);font-weight:700}
+ol.acts::marker,ol.acts li::marker{color:var(--indigo);font-family:var(--mono);font-size:12px}
+
+.foot{
+  margin-top:52px;padding-top:18px;border-top:1px solid var(--line);
+  color:var(--ink-3);font-size:12.5px;font-family:var(--mono);line-height:1.9
+}
+:focus-visible{outline:2px solid var(--indigo);outline-offset:2px}
+</style>
+
+<div class="wrap">
+
+  <header class="mast">
+    <div class="stamp">未承認<b>要判断</b>2026.08.19</div>
+    <p class="eyebrow">Corekara / CAREER JAPAN — Operations</p>
+    <h1>実装コントロールパネル</h1>
+    <p class="sub">今どこが動いていて、次に何をすればいいか。この1枚で完結します。上から順に進めてください。</p>
+  </header>
+
+  <div class="board">
+    <div class="cell"><div class="k">求人媒体の応募取込</div><span class="pill p-wait">設定待ち</span></div>
+    <div class="cell"><div class="k">Hot判定・面談通知</div><span class="pill p-wait">設定待ち</span></div>
+    <div class="cell"><div class="k">GitHub 定期実行</div><span class="pill p-dead">停止中</span></div>
+    <div class="cell"><div class="k">記事・LPの公開先</div><span class="pill p-dead">未決定</span></div>
+    <div class="cell"><div class="k">サイトのAI可読性</div><span class="pill p-dead">読めない</span></div>
+    <div class="cell"><div class="k">careerjapan.co</div><span class="pill p-dead">Web未設定</span></div>
+  </div>
+
+  <!-- ============ 1 ============ -->
+  <section class="sec">
+    <div class="rule"><span class="n">01</span><span class="bar"></span></div>
+    <h2>最優先で知っておくべきこと</h2>
+    <p class="lead">今日サイトを調べて分かったことです。LLMO戦略の前提が崩れる内容なので、最初に共有します。</p>
+
+    <div class="alert">
+      <h3>corekara.info は、AI検索から中身が一切見えていません</h3>
+      <p style="margin:0;color:var(--ink-2)">現在のサイトは JavaScript で画面を組み立てる作りです。ブラウザでは正常に見えますが、HTMLそのものには本文が1文字も入っていません。実際に取得した中身がこれです。</p>
+
+      <div class="proof">&lt;body&gt;
+  &lt;div id="root"&gt;&lt;/div&gt;   <b>← 本文がここに無い</b>
+&lt;/body&gt;
+
+JavaScriptを実行しない場合に読めるテキスト量： <b>54文字</b>
+（タイトルとメタタグのみ。会社概要も求人情報もゼロ）</div>
+
+      <p style="margin:0 0 10px;color:var(--ink-2)"><strong>何が起きるか：</strong>ChatGPT・Perplexity・Claude などの検索クローラーは、多くの場合 JavaScript を実行しません。つまり今のままニッチLPを毎日作っても、<strong>AIには白紙のページとして扱われます。</strong></p>
+      <p style="margin:0;color:var(--ink-2)"><strong>言い換えると：</strong>LLMO対策のコードは書けていますが、<strong>それを載せる土台がまだ機能していない</strong>状態です。ドメインの話と一緒に解決すべき最重要課題です。</p>
+
+      <div class="warn"><b>補足：</b>これは外注先の手抜きとは限りません。React等で作ると標準でこうなります。ただ「AI検索で戦う」なら作り方を変える必要があります。</div>
+    </div>
+  </section>
+
+  <!-- ============ 2 ============ -->
+  <section class="sec">
+    <div class="rule"><span class="n">02</span><span class="bar"></span></div>
+    <h2>ドメインの判断</h2>
+    <p class="lead">「.info は安く見えて企業信頼性に繋がらない」という感覚は正しいです。そのうえで、調べた事実を踏まえた選択肢を並べます。</p>
+
+    <div class="card" style="margin-bottom:16px">
+      <p style="margin:0 0 10px"><strong>調査結果</strong></p>
+      <ul class="plain">
+        <li><code>corekara.info</code> … 稼働中。Firebase Hosting 配信。メタ情報の作者名は「株式会社CAREER JAPAN」</li>
+        <li><code>careerjapan.co</code> … <strong>Webサイトとしては未設定</strong>（Aレコードなし）。メールでは稼働中なので、ドメイン自体は保有済み</li>
+        <li>応募実績は累計 <strong>1,758件</strong>。ただし .info ドメイン自体の検索評価はもともと高くありません</li>
+      </ul>
+    </div>
+
+    <div class="tw" style="margin-bottom:16px">
+      <table>
+        <thead><tr><th>案</th><th>構成</th><th>企業信頼性</th><th>LLMO適性</th><th>移行コスト</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><strong>A</strong> 現状維持</td>
+            <td>corekara.info のまま</td>
+            <td>低</td><td>低（評価が分散）</td><td class="num">なし</td>
+          </tr>
+          <tr>
+            <td><strong>B</strong> 併用</td>
+            <td>会社 = careerjapan.co<br>サービス = corekara.info</td>
+            <td>中</td><td>低（2ドメインに分散し最も不利）</td><td class="num">小</td>
+          </tr>
+          <tr class="rec">
+            <td><strong>C</strong> 統合 <span style="color:var(--indigo);font-family:var(--mono);font-size:10px">推奨</span></td>
+            <td>careerjapan.co に集約<br>corekara.info は301転送</td>
+            <td>高</td><td>高（1ドメインに集中）</td><td class="num">中</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card">
+      <p style="margin:0 0 10px"><strong>C案を推す理由</strong></p>
+      <ul class="plain">
+        <li>AI検索の評価は<strong>ドメイン単位で蓄積</strong>します。毎日ニッチLPを増やす戦略は、全部を1つのドメイン配下に置いたときに最も効きます</li>
+        <li>今ならコンテンツ量が少なく、<strong>移行コストが最小</strong>です。記事が100本溜まってからでは遅い</li>
+        <li>「コレカラ転職」はサービス名として <code>careerjapan.co/corekara</code> の形で残せます。ブランドを捨てる必要はありません</li>
+        <li>301リダイレクトを正しく設定すれば、既存の評価と流入は引き継げます</li>
+      </ul>
+      <div class="check"><b>重要：</b>ドメイン移行だけでは 01 の問題は解決しません。<strong>移行と同時にSSR（サーバー側で本文を生成する作り）に変える</strong>のが正解です。別々にやると二度手間になります。</div>
+    </div>
+  </section>
+
+  <!-- ============ 3 ============ -->
+  <section class="sec">
+    <div class="rule"><span class="n">03</span><span class="bar"></span></div>
+    <h2>今日の作業：Apps Script 再設定</h2>
+    <p class="lead">関数を全削除いただいたので、ゼロから手順を書き直しました。所要 25分ほど。STEP 1〜4 はスプレッドシートに一切書き込みません。</p>
+
+    <ol class="steps">
+
+      <li class="step">
+        <div class="idx">1</div>
+        <div class="bd">
+          <h3>スクリプトの置き場所を作る</h3>
+          <p><a href="https://script.google.com" style="color:var(--indigo)">script.google.com</a> を開き、左上「新しいプロジェクト」をクリック。プロジェクト名は「CareerJapan 自動化」など分かりやすい名前に。</p>
+          <p>左メニューのファイル横「＋」から <strong>3つのファイル</strong>を作り、GitHubの中身をそれぞれ貼り付けます。</p>
+          <div class="do"><span class="lab">FILE</span><code>00-diagnose</code><code>01-media-ingest</code><code>02-nurturing</code></div>
+          <div class="warn"><b>なぜ独立プロジェクト？</b>スプレッドシートが2つあるため、どちらかに紐付けると混乱します。独立させれば両方を安全に扱えます。</div>
+        </div>
+      </li>
+
+      <li class="step">
+        <div class="idx">2</div>
+        <div class="bd">
+          <h3>シート構成を確認する<span class="safe">書き込みなし</span></h3>
+          <p>上部の関数選択メニューから <code>shindan</code> を選び「実行」。初回は権限の承認画面が出ます。</p>
+          <p>「このアプリは Google で確認されていません」と表示されたら、<strong>「詳細」→「（プロジェクト名）に移動」</strong>と進んでください。ご自身が書いたスクリプトなので問題ありません。</p>
+          <div class="check"><b>確認すること：</b>下部の「実行ログ」に両スプレッドシートの全タブ名と列構成が出ます。<strong>この内容をそのままコピーして私に送ってください。</strong>正しいタブ名が分かれば次に進めます。</div>
+        </div>
+      </li>
+
+      <li class="step">
+        <div class="idx">3</div>
+        <div class="bd">
+          <h3>書き込み先のタブ名を設定する</h3>
+          <p>STEP 2 で確認したタブ名を、2つのファイルにそれぞれ入力します。</p>
+          <div class="do"><span class="lab">01</span><code>TAB_NAME: '応募管理'</code><span style="color:var(--ink-3);font-size:12.5px">← 求人媒体の応募を書き込むタブ</span></div>
+          <div class="do"><span class="lab">02</span><code>TAB_NAME: '求職者一覧'</code><span style="color:var(--ink-3);font-size:12.5px">← キャリカミ等の面談管理タブ</span></div>
+          <div class="warn"><b>安全装置：</b>ここが空欄のままだと、すべての処理が実行前に停止します。前回のような誤ったタブへの書き込みは起きません。</div>
+        </div>
+      </li>
+
+      <li class="step">
+        <div class="idx">4</div>
+        <div class="bd">
+          <h3>Indeed・求人ボックスの応募メールを調べる<span class="safe">書き込みなし</span></h3>
+          <p><code>chosa_ouboMail</code> を実行します。Gmailに届いている応募通知メールを検索し、そこから氏名・電話番号を取り出せるかテストします。</p>
+          <p>ここが<strong>自動化の成否を分ける一番重要な工程</strong>です。メールの書式は媒体ごとに違い、実物を見ないと正確に読み取れません。</p>
+          <div class="check"><b>確認すること：</b>実行ログに出るメール本文のサンプルと「抽出テスト」の結果を<strong>そのまま私に送ってください。</strong>実際の書式に合わせて解析部分を書き直します。</div>
+          <div class="warn"><b>「該当0件」と出た場合：</b>応募メールが別アカウント（<code>info@</code> など）に届いている可能性があります。どのアドレスに届いているか教えてください。</div>
+        </div>
+      </li>
+
+      <li class="step">
+        <div class="idx">5</div>
+        <div class="bd">
+          <h3>今の温度感を見てみる<span class="safe">通知は飛びません</span></h3>
+          <p><code>kakunin_TEST</code> を実行。既存の面談データから Hot / Warm / Cold の比率と、今すぐ連絡すべき求職者の一覧が出ます。</p>
+          <p>メールもSlackも送信されないので、安心して試せます。<strong>目標50%に対して現在何%なのか、ここで初めて実数が分かります。</strong></p>
+          <div class="check"><b>確認すること：</b>Hot判定された方の顔ぶれを見て、感覚と合っているか教えてください。ズレていれば点数の配分を調整します。</div>
+        </div>
+      </li>
+
+      <li class="step">
+        <div class="idx">6</div>
+        <div class="bd">
+          <h3>通知先を登録する</h3>
+          <p>左メニュー「プロジェクトの設定」→ 下部「スクリプト プロパティ」→「プロパティを追加」。</p>
+          <div class="do"><span class="lab">KEY</span><code>SLACK_WEBHOOK_URL</code><code>EMAIL_MATSUMOTO</code><code>EMAIL_ARAKI</code><code>EMAIL_GOSHI</code></div>
+          <p>Slack は「アプリ → Incoming Webhooks」から発行できます。未設定でも動きますが、その分の通知は飛ばず実行ログに残るだけになります。</p>
+        </div>
+      </li>
+
+      <li class="step">
+        <div class="idx">7</div>
+        <div class="bd">
+          <h3>本番稼働させる</h3>
+          <p>STEP 4 の調整が終わってから実行してください。順番が大切です。</p>
+          <div class="do"><span class="lab">順に</span><code>torikomi_TEST</code>→<code>torikomi_HONBAN</code>→<code>triggerSettei</code>→<code>nurtureTriggerSettei</code></div>
+          <p><code>torikomi_TEST</code> は「何件取り込まれるか」だけを表示します。件数が想定通りなら本番へ。</p>
+          <div class="check"><b>稼働後のスケジュール：</b>応募取込は15分おき／面談リマインド 8時／Hot判定 10時・15時／日次レポート 18時</div>
+          <div class="warn"><b>何かおかしいと感じたら：</b><code>zenTriggerSakujo</code> を実行すれば全自動処理が即座に止まります。</div>
+        </div>
+      </li>
+
+    </ol>
+  </section>
+
+  <!-- ============ 4 ============ -->
+  <section class="sec">
+    <div class="rule"><span class="n">04</span><span class="bar"></span></div>
+    <h2>GitHub 側が止まっている理由</h2>
+    <p class="lead">毎日のニッチサービス生成・LLMO更新・承認Issueは、現在1件も動いていません。原因は3つで、いずれも解消可能です。</p>
+
+    <div class="tw">
+      <table>
+        <thead><tr><th>原因</th><th>内容</th><th>対応</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><strong>コードの置き場所</strong></td>
+            <td>定期実行は main ブランチのファイルしか動きません。現在 main には README しかない状態です</td>
+            <td>main へマージ<br><span style="color:var(--shu)">※ご承認が必要</span></td>
+          </tr>
+          <tr>
+            <td><strong>依存ファイル欠落</strong></td>
+            <td><code>package-lock.json</code> が無く、実行の1行目で失敗します</td>
+            <td>私が生成します</td>
+          </tr>
+          <tr>
+            <td><strong>公開先が未定</strong></td>
+            <td>LPを作っても置く場所がなく、承認しても公開されません</td>
+            <td>02 の判断待ち</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card" style="margin-top:16px">
+      <p style="margin:0 0 8px"><strong>稼働後、承認はここで行います</strong></p>
+      <p style="margin:0;color:var(--ink-2);font-size:14px">GitHubリポジトリの <strong>Issues</strong> タブに毎朝9時、承認依頼が自動作成されます。松本さんに自動アサインされるので通知メールが届きます。内容を確認し、<strong>コメント欄に <code>approved</code> と入力して送信</strong>すれば承認完了です。所要2〜3分。</p>
+    </div>
+  </section>
+
+  <!-- ============ 5 ============ -->
+  <section class="sec">
+    <div class="rule"><span class="n">05</span><span class="bar"></span></div>
+    <h2>ネクストアクション</h2>
+    <p class="lead">上から順にお願いします。左側が終わらないと右側が進められない構造です。</p>
+
+    <div class="split">
+      <div class="card">
+        <span class="who who-you">松本さん</span>
+        <ol class="acts">
+          <li><b>STEP 1〜2 を実行</b><br>タブ名の一覧を私に共有（15分）</li>
+          <li><b>STEP 4 を実行</b><br>応募メールのサンプルを共有（5分）<br><span style="color:var(--ink-3);font-size:13px">届いていない場合は受信アドレスを教えてください</span></li>
+          <li><b>ドメイン方針を決定</b><br>A / B / C のどれで進めるか</li>
+          <li><b>サイトの管理権限を確認</b><br>Firebase / ソースコードを外注先から受け取れるか</li>
+          <li><b>main へのマージ可否を判断</b></li>
+          <li><b>媒体のパスワードを退避</b><br>スプシ1枚目から管理ツールへ（前回ご指摘の件）</li>
+        </ol>
+      </div>
+
+      <div class="card">
+        <span class="who who-me">Claude Code</span>
+        <ol class="acts">
+          <li><b>応募メール解析の作り込み</b><br>左2の結果を受けて実データに対応</li>
+          <li><b>スコア配分の調整</b><br>左1・STEP5 の結果を見て精度を上げる</li>
+          <li><b>SSR構成の設計</b><br>左3・4を受けてAIが読める作りに再構築</li>
+          <li><b>301リダイレクト設計</b><br>C案採用時、評価を引き継ぐ移行計画</li>
+          <li><b>package-lock 生成とCI修正</b><br>左5の承認後に実行</li>
+          <li><b>ニッチLPの本番投入</b><br>公開先が決まり次第</li>
+        </ol>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:16px">
+      <p style="margin:0;color:var(--ink-2);font-size:14px"><strong>いま一番効くのは、左の1と2です。</strong>この2つが終われば応募の自動取込が実際に動き出し、毎日の転記作業がなくなります。ドメインとサイト再構築は影響が大きい分だけ時間もかかるので、並行して検討いただく形が現実的です。</p>
+    </div>
+  </section>
+
+  <p class="foot">
+    調査日 2026-08-19 ／ corekara.info・careerjapan.co の実測、および両スプレッドシートの構造確認に基づく<br>
+    コードとドキュメント：github.com/matsumoto-ayuta-hub/recruitment-agency（ブランチ claude/referral-nurturing-strategy-x5yh6t）
+  </p>
+
+</div>
