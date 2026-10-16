@@ -1,0 +1,94 @@
+name: ナーチャリングパイプライン
+
+on:
+  schedule:
+    # 毎日 朝8時・午後2時 JST
+    - cron: "0 23 * * *"
+    - cron: "0 5 * * *"
+  workflow_dispatch:
+
+jobs:
+  run-pipeline:
+    name: リードスコアリング & ナーチャリング実行
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - run: npm ci
+
+      - name: ナーチャリングパイプライン実行
+        run: npm run nurturing:run
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+
+      - name: レポートコミット
+        run: |
+          git config --local user.email "claude-code@careerjapan.co"
+          git config --local user.name "Claude Code (Nurturing)"
+          TIMESTAMP=$(date +%Y-%m-%d-%H%M)
+          git add reports/nurturing-*.json || true
+          git diff --staged --quiet || git commit -m "data: ナーチャリングパイプライン実行結果 — $TIMESTAMP"
+          git push origin main || true
+
+  check-kpi:
+    name: KPI確認 & アラート
+    needs: run-pipeline
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - run: npm ci
+
+      - name: KPI確認
+        id: kpi
+        run: |
+          node -e "
+          const fs = require('fs');
+          const files = fs.readdirSync('./reports').filter(f => f.startsWith('nurturing-')).sort().reverse();
+          if (files.length === 0) { console.log('HOT_RATIO=0'); process.exit(0); }
+          const latest = JSON.parse(fs.readFileSync('./reports/' + files[0]));
+          const ratio = Math.round(latest.hotRatio * 100);
+          console.log('HOT_RATIO=' + ratio);
+          process.stdout.write('hot_ratio=' + ratio + '\n');
+          " >> $GITHUB_OUTPUT
+          ls reports/
+
+      - name: KPI低下アラート（Hot比率30%以下）
+        if: ${{ steps.kpi.outputs.hot_ratio < 30 }}
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: '🚨 KPIアラート: Hot求職者比率が低下しています',
+              body: `## Hot求職者比率アラート
+
+            現在のHot比率: ${{ steps.kpi.outputs.hot_ratio }}%（目標: 50%）
+
+            ### 推奨アクション
+            1. CA個人メディアの記事配信を増加
+            2. リファラルプログラムの報酬を見直し
+            3. チャットボットのエスカレーション閾値を下げる
+            4. ニッチサービスのSNS配信を強化
+
+            *このアラートはClaudeCodeが自動生成しました。対応の最終判断は松本氏にお任せします。*`,
+              labels: ['kpi-alert', '要確認'],
+              assignees: ['matsumoto-ayuta-hub'],
+            });

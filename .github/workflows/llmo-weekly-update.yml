@@ -1,0 +1,41 @@
+name: LLMO週次更新
+
+on:
+  schedule:
+    # 毎週月曜 午前6時 JST
+    - cron: "0 21 * * 0"
+  workflow_dispatch:
+
+jobs:
+  llmo-update:
+    name: LLMOコンテンツ一括更新
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - run: npm ci
+
+      - name: LLMO更新実行
+        run: npm run llmo:update
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+
+      - name: 更新内容コミット
+        run: |
+          git config --local user.email "claude-code@careerjapan.co"
+          git config --local user.name "Claude Code (LLMO Updater)"
+          WEEK=$(date +%Y-W%V)
+          git add llmo-content/ reports/llmo-update-*.json || true
+          git diff --staged --quiet || git commit -m "chore: LLMO週次更新 — $WEEK
+
+          AI検索最適化コンテンツを全サービス分更新。
+          Perplexity/ChatGPT/Gemini等の参照精度向上を目的とした定期メンテナンス。"
+          git push origin main
